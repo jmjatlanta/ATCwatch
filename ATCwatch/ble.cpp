@@ -24,15 +24,23 @@ BLECharacteristic   RXchar        = BLECharacteristic("0001", BLEWriteWithoutRes
 bool vars_ble_connected = false;
 
 void init_ble() {
-  blePeripheral.setLocalName("ATCwatch");
-  blePeripheral.setAdvertisingInterval(500);
-  blePeripheral.setDeviceName("ATCwatch");
+  blePeripheral.setLocalName("BowWatchV1");
+  blePeripheral.setAdvertisingInterval(500); // in ms
+  blePeripheral.setDeviceName("BowWatch");
   blePeripheral.setAdvertisedServiceUuid(main_service.uuid());
+  // There are 3 attributes here...
+  // main_service is what things connect to
+  // TXchar is a notification
+  // RXchar is a "WriteWithoutResponse"
   blePeripheral.addAttribute(main_service);
   blePeripheral.addAttribute(TXchar);
   blePeripheral.addAttribute(RXchar);
+  // handle events
+  // when RXchar receives something
   RXchar.setEventHandler(BLEWritten, ble_written);
+  // when someone connects to the watch
   blePeripheral.setEventHandler(BLEConnected, ble_ConnectHandler);
+  // when someone disconnects from the watch
   blePeripheral.setEventHandler(BLEDisconnected, ble_DisconnectHandler);
   blePeripheral.begin();
   ble_feed();
@@ -42,11 +50,19 @@ void ble_feed() {
   blePeripheral.poll();
 }
 
+/***
+ * handles a connection event (when a device connects to the watch)
+ * @param central info about the foreign device
+ */
 void ble_ConnectHandler(BLECentral& central) {
   sleep_up(WAKEUP_BLECONNECTED);
   set_vars_ble_connected(true);
 }
 
+/***
+ * handles a disconnect event
+ * @param central the foreign device
+ */
 void ble_DisconnectHandler(BLECentral& central) {
   sleep_up(WAKEUP_BLEDISCONNECTED);
   set_vars_ble_connected(false);
@@ -57,6 +73,11 @@ String tempCmd = "";
 int tempLen = 0, tempLen1;
 boolean syn;
 
+/***
+ * Called when RXchar gets written to
+ * @param central where it came from
+ * @param characteristic the incoming data
+ */
 void ble_written(BLECentral& central, BLECharacteristic& characteristic) {
   char remoteCharArray[22];
   tempLen1 = characteristic.valueLength();
@@ -72,6 +93,10 @@ void ble_written(BLECentral& central, BLECharacteristic& characteristic) {
   }
 }
 
+/*****
+ * Write to TXchar
+ * @param Command what to write
+ */
 void ble_write(String Command) {
   Command = Command + "\r\n";
   while (Command.length() > 0) {
@@ -83,14 +108,28 @@ void ble_write(String Command) {
   }
 }
 
+/*****
+ * See if a device is connected to the watch
+ * @returns true if there is a connection
+ */
 bool get_vars_ble_connected() {
   return vars_ble_connected;
 }
 
+/****
+ * Set the connection status
+ * @param state true if there is a connection, false if not
+ */
 void set_vars_ble_connected(bool state) {
   vars_ble_connected = state;
 }
 
+/****
+ * convert a command into something the BLE device can use
+ * I believe this could better be handled by separate characteristics.
+ * I need to test to see if memory requirements get better or worse
+ * @param Command the command
+ */
 void filterCmd(String Command) {
   if (Command == "AT+BOND") {
     ble_write("AT+BOND:OK");
@@ -136,9 +175,11 @@ void filterCmd(String Command) {
     ble_write("AT+MOTOR:1" + Command.substring(10));
     set_motor_ms();
   } else if (Command.substring(0, 6) == "AT+DT=") {
+     // set date and time
     SetDateTimeString(Command.substring(6));
     ble_write("AT+DT:" + GetDateTimeString());
   } else if (Command.substring(0, 5) == "AT+DT") {
+     // get date and time
     ble_write("AT+DT:" + GetDateTimeString());
   } else if (Command.substring(0, 8) == "AT+HTTP=") {
     show_http(Command.substring(8));

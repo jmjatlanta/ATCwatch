@@ -11,8 +11,11 @@
 #include "inputoutput.h"
 #include <TimeLib.h>
 
-time_data_struct time_data;
+time_data_struct time_data; // stores the current time
 
+/****
+ * Initialize the time to 2020-01-01 00:00:00
+ */
 void init_time() {
   int year = 2020;
   int month = 1;
@@ -23,6 +26,10 @@ void init_time() {
   setTime( hr, min, sec, day, month, year);
 }
 
+/****
+ * get the time as a struct
+ * @returns the date and time as a time_data_struct
+ */
 time_data_struct get_time() {
   time_data.year = year();
   time_data.month = month();
@@ -33,6 +40,10 @@ time_data_struct get_time() {
   return time_data;
 }
 
+/****
+ * Set date and time
+ * @param datetime timestamp in format YYYYMMDDHHMMSS
+ */
 void SetDateTimeString(String datetime) {
   int year = datetime.substring(0, 4).toInt();
   int month = datetime.substring(4, 6).toInt();
@@ -43,16 +54,31 @@ void SetDateTimeString(String datetime) {
   setTime( hr, min, sec, day, month, year);
 }
 
+/****
+ * Set the date
+ * @param year the year
+ * @param month the month
+ * @param day the day
+ */
 void SetDate(int year, int month, int day) {
   time_data = get_time();
   setTime( time_data.hr, time_data.min, time_data.sec, day, month, year);
 }
 
+/****
+ * Set the time
+ * @param hr the hour
+ * @param min the minute
+ */
 void SetTime(int hr, int min) {
   time_data = get_time();
   setTime( hr, min, 0, time_data.day, time_data.month, time_data.year);
 }
 
+/*****
+ * Retrieve the date and time (no seconds)
+ * @returns the date in the format YYYYMMDDHHMM
+ */
 String GetDateTimeString() {
   String datetime = String(year());
   if (month() < 10) datetime += "0";
