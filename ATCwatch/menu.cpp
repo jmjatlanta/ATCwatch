@@ -43,25 +43,28 @@ int vars_menu = -1;
 int vars_max_menu = 4;
 bool swipe_enabled_bool = false;
 
+// keep track of what screen we are on
 Screen_def *currentScreen = &homeScreen;
+// keep track of previous screens
 Screen_def *oldScreen = &homeScreen;
 Screen_def *lastScreen = &homeScreen;
 
+// Page 1 of applications
 app_struct notifyApp = {"Notify", &IsymbolMsg, &notifyScreen};
 app_struct heartApp = {"Heartrate", &IsymbolHeart, &heartScreen};
 app_struct batteryApp = {"Battery", &IsymbolBatteryBig, &batteryScreen};
 app_struct debugApp = {"Debug", &IsymbolDebug, &debugScreen};
-
+// Page 2 of applications
 app_struct rebootApp = {"Reboot", &IsymbolReboot, &rebootScreen};
 app_struct updateApp = {"Bootloader", &IsymbolBootloader, &updateScreen};
 app_struct offApp = {"Shutdown", &IsymbolShutdown, &offScreen};
 app_struct settingsApp = {"Settings", &IsymbolSettings, &settingsScreen};
-
+// Page 3 of applications
 app_struct animationApp = {"Animation", &IsymbolAnimation, &animationScreen};
 app_struct infosApp = {"Infos", &IsymbolInfos, &infosScreen};
 app_struct acclApp = {"Accl", &IsymbolAccl , &acclScreen};
 app_struct demoApp = {"Demo", &IsymbolChart , &demoScreen};
-
+// Page 4 of applications
 app_struct flashApp = {"Flash_test", &IsymbolChart , &flashScreen};
 app_struct touchApp = {"Touch", &IsymbolMouse , &touchScreen};
 app_struct httpApp = {"HTTP", &IsymbolMouse , &httpScreen};
@@ -132,6 +135,10 @@ void check_button_push(int length) {
   currentScreen->button_push(length);
 }
 
+/***
+ * The screen was touched
+ * @param touch_data How the screen was touched
+ */
 void check_menu(touch_data_struct touch_data) {
   if (touch_data.gesture == TOUCH_SLIDE_UP) {
     currentScreen->up();
@@ -152,6 +159,10 @@ uint32_t get_menu_delay_time() {
   return currentScreen->refreshTime();
 }
 
+/***
+ * Switch applications (i.e. from the app menu)
+ * @param screen the new screen
+ */
 void change_screen(Screen_def* screen) {
   lastScreen = currentScreen;
   currentScreen = screen;

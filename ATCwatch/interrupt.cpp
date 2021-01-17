@@ -189,6 +189,9 @@ void interrupt_charge() {
 
 bool button_pressed = false;
 long button_press_begin = 0;
+/****
+ * Hardware button was pressed
+ */
 void interrupt_button() {
   if (get_button() && (millis() - last_button_press > 200)) {
     last_button_press = millis();

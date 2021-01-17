@@ -19,3 +19,4 @@ void ble_write(String Command);
 bool get_vars_ble_connected();
 void set_vars_ble_connected(bool state);
 void filterCmd(String Command);
+BLECharacteristic& get_ble_value();

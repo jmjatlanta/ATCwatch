@@ -14,64 +14,104 @@
 
 class Screen_def
 {
-  public:
-    virtual void pre()
-    {
-    }
+public:
+   /***
+    * On system startup
+    */   
+   virtual void pre()
+   {
+   }
 
-    virtual void main()
-    {
-    }
+   /***
+    * On app selected
+    */
+   virtual void main()
+   {
+   }
 
-    virtual void post()
-    {
-    }
+   virtual void post()
+   {
+   }
 
-    virtual void up()
-    {
-    }
+   /***
+    * On swipe up
+    */
+   virtual void up()
+   {
+   }
 
-    virtual void down()
-    {
-    }
+   /****
+    * On swipe down
+    */
+   virtual void down()
+   {
+   }
 
-    virtual void left()
-    {
-    }
+   /****
+    * On swipe right to left
+    */
+   virtual void left()
+   {
+   }
 
-    virtual void right()
-    {
-    }
+   /***
+    * On swipe left to right
+    */
+   virtual void right()
+   {
+   }
 
-    virtual void click(touch_data_struct touch_data)
-    {
-    }
+   /***
+    * On single press
+    */
+   virtual void click(touch_data_struct touch_data)
+   {
+   }
 
-    virtual void long_click(touch_data_struct touch_data)
-    {
-    }
-    
-    virtual void button_push(int length)
-    {
-    }
+   /****
+    * On long press
+    */
+   virtual void long_click(touch_data_struct touch_data)
+   {
+   }
 
-    virtual uint32_t sleepTime()
-    {
+   /****
+    * On hardware button press
+    * @param length
+    */ 
+   virtual void button_push(int length)
+   {
+   }
+
+   /***
+    * How much idle time should pass before going to sleep
+    */
+   virtual uint32_t sleepTime()
+   {
       return DEFAULT_SLEEP_TIMEOUT;
-    }
-    
-    virtual uint32_t refreshTime()
-    {
-      return DEFAULT_REFRESH_TIME;
-    }
-    
-    virtual void lv_event_class(lv_obj_t * object, lv_event_t event)
-    {
-      
-    }
+   }
 
-    virtual void pre_display()
-    {
+   /****
+    * How long to refresh
+    * @returns refresh time
+    */ 
+   virtual uint32_t refreshTime()
+   {
+      return DEFAULT_REFRESH_TIME;
+   }
+
+   /***
+    * Process a graphical event
+    * @param object the object where the event took place
+    * @param event details of what took place
+    */ 
+   virtual void lv_event_class(lv_obj_t * object, lv_event_t event)
+   {
+      
+   }
+
+   virtual void pre_display()
+   {
       lv_obj_clean(lv_scr_act());
-    }    
+   }    
 };

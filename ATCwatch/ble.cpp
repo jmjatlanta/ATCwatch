@@ -18,23 +18,25 @@
 
 BLEPeripheral                   blePeripheral           = BLEPeripheral();
 BLEService                      main_service     = BLEService("190A");
-BLECharacteristic   TXchar        = BLECharacteristic("0002", BLENotify, 20);
+BLECharacteristic MyTest          = BLECharacteristic("3842fdbd-8feb-4e8e-b90d-8d8770bdee00", BLERead | BLEWrite, 20);
+BLECharacteristic   TXchar        = BLECharacteristic("0002", BLERead | BLENotify, 20);
 BLECharacteristic   RXchar        = BLECharacteristic("0001", BLEWriteWithoutResponse, 20);
 
 bool vars_ble_connected = false;
 
 void init_ble() {
-  blePeripheral.setLocalName("BowWatchV1");
+  blePeripheral.setLocalName("BowWatch");
   blePeripheral.setAdvertisingInterval(500); // in ms
-  blePeripheral.setDeviceName("BowWatch");
+  blePeripheral.setDeviceName("BowWatchV1");
   blePeripheral.setAdvertisedServiceUuid(main_service.uuid());
-  // There are 3 attributes here...
   // main_service is what things connect to
-  // TXchar is a notification
-  // RXchar is a "WriteWithoutResponse"
   blePeripheral.addAttribute(main_service);
+  // TXchar is a notification. It should tell the remote device when it is updated
   blePeripheral.addAttribute(TXchar);
+  // RXchar is a "WriteWithoutResponse"
   blePeripheral.addAttribute(RXchar);
+  MyTest.setValue("Initial");
+  blePeripheral.addAttribute(MyTest);
   // handle events
   // when RXchar receives something
   RXchar.setEventHandler(BLEWritten, ble_written);
@@ -79,22 +81,36 @@ boolean syn;
  * @param characteristic the incoming data
  */
 void ble_written(BLECentral& central, BLECharacteristic& characteristic) {
-  char remoteCharArray[22];
-  tempLen1 = characteristic.valueLength();
-  tempLen = tempLen + tempLen1;
-  memset(remoteCharArray, 0, sizeof(remoteCharArray));
-  memcpy(remoteCharArray, characteristic.value(), tempLen1);
-  tempCmd = tempCmd + remoteCharArray;
-  if (tempCmd[tempLen - 2] == '\r' && tempCmd[tempLen - 1] == '\n') {
-    answer = tempCmd.substring(0, tempLen - 2);
-    tempCmd = "";
-    tempLen = 0;
-    filterCmd(answer);
-  }
+   String uuid = characteristic.uuid();
+   if (uuid == "3842fdbd-8feb-4e8e-b90d-8d8770bdee00")
+   {
+      // do something special
+   }
+   else
+   {
+      char remoteCharArray[22];
+      tempLen1 = characteristic.valueLength();
+      tempLen = tempLen + tempLen1;
+      memset(remoteCharArray, 0, sizeof(remoteCharArray));
+      memcpy(remoteCharArray, characteristic.value(), tempLen1);
+      tempCmd = tempCmd + remoteCharArray;
+      if (tempCmd[tempLen - 2] == '\r' && tempCmd[tempLen - 1] == '\n') {
+         answer = tempCmd.substring(0, tempLen - 2);
+         tempCmd = "";
+         tempLen = 0;
+         filterCmd(answer);
+      }
+   }
+}
+
+BLECharacteristic& get_ble_value()
+{
+   return MyTest;
 }
 
 /*****
- * Write to TXchar
+ * Write to TXchar so someone that subscribed to be notified
+ * receives the message
  * @param Command what to write
  */
 void ble_write(String Command) {

@@ -70,9 +70,19 @@ class LogScreen : public Screen
         lv_label_set_text_fmt(label_log, "Log: %i", msg);
         lv_obj_align(label_log, NULL, LV_ALIGN_CENTER, 0, -30);
       } else if (object == btn2 && event == LV_EVENT_SHORT_CLICKED) {
+         /*
         int msg = get_battery_percent();
         ble_write("AT+LOG:" + String(msg));
-        lv_label_set_text_fmt(label_log, "Log: %i", msg);
+        */
+        BLECharacteristic& v = get_ble_value();
+        int len = v.valueLength();
+        if (len > 20)
+         len = 20;
+        char msg[21];
+        memset(msg, 0, 21);
+        memcpy(msg, v.value(), len);
+        msg[len] = 0;
+        lv_label_set_text_fmt(label_log, "Log: %s", msg);
         lv_obj_align(label_log, NULL, LV_ALIGN_CENTER, 0, -30);
       }
     }

@@ -34,8 +34,8 @@ class InfosScreen : public Screen
       lv_label_set_text(label,
                         "Infos:\n"
                         "Firmware By:\n"
-                        "   ATCnetz.de\n"
-                        "    (Aaron Christophel)\n"
+                        "   JMJAtlanta\n"
+                        "    (John Jones)\n"
                         "  Compiled:\n"
                         "  "__DATE__"\n"
                         "  "__TIME__

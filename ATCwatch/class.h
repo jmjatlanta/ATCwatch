@@ -14,46 +14,29 @@
 class Screen : public Screen_def
 {
   public:
-    virtual void pre()
-    {
-    }
-
-    virtual void main()
-    {
-    }
-
-    virtual void post()
-    {
-    }
-
-    virtual void up()
-    {
-    }
-
-    virtual void down()
-    {
-    }
-
-    virtual void left()
-    {
-    }
-
-    virtual void right()
-    {
+   /****
+    * By default, set last menu
+    */
+   virtual void right()
+   {
       set_last_menu();
-    }
+   }
 
-    virtual void click(touch_data_struct touch_data)
-    {
-    }
+   virtual void click(touch_data_struct touch_data)
+   {
+   }
 
-    virtual void long_click(touch_data_struct touch_data)
-    {
-    }
+   virtual void long_click(touch_data_struct touch_data)
+   {
+   }
 
-    virtual void button_push(int length)
-    {
+   /***
+    * Hardware button was pressed, go home
+    * @param length
+    */
+   virtual void button_push(int length)
+   {
       display_home();
       set_motor_ms(40);
-    }
+   }
 };

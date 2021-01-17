@@ -19,9 +19,9 @@
 #include <lvgl.h>
 
 struct app_struct {
-  const char* _title;
-  const lv_img_dsc_t* _symbol;
-  Screen* _screen;
+  const char* _title; // the title of the application
+  const lv_img_dsc_t* _symbol; // The icon for the application
+  Screen* _screen; // The actual application object
 };
 
 class AppScreen : public Screen
