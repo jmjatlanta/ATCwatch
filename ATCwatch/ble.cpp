@@ -16,40 +16,66 @@
 #include "push.h"
 #include "accl.h"
 
-BLEPeripheral                   blePeripheral           = BLEPeripheral();
-BLEService                      main_service     = BLEService("190A");
-BLECharacteristic MyTest          = BLECharacteristic("3842fdbd-8feb-4e8e-b90d-8d8770bdee00", BLERead | BLEWrite, 20);
-BLECharacteristic   TXchar        = BLECharacteristic("0002", BLERead | BLENotify, 20);
-BLECharacteristic   RXchar        = BLECharacteristic("0001", BLEWriteWithoutResponse, 20);
-
+BLEPeripheral     blePeripheral = BLEPeripheral();
+BLEService        main_service  = BLEService("190A");
+BLECharacteristic Depth = BLECharacteristic("3842fdbd-8feb-4e8e-b90d-8d8770bdee00", BLEWrite, 8);
+BLECharacteristic DepthSubscribe = BLECharacteristic("db276bb3-ca7e-44eb-9990-ccf2bd630cf7", BLERead | BLENotify, 1);
+BLECharacteristic DateTime = BLECharacteristic("1b879018-3228-45a9-969e-7fd647e45327", BLEWrite, 14);
+BLECharacteristic TXchar = BLECharacteristic("0002", BLERead | BLENotify, 20);
+BLECharacteristic RXchar = BLECharacteristic("0001", BLEWriteWithoutResponse, 20);
+BleEventHandler* handler = nullptr;
 bool vars_ble_connected = false;
+String lastLogEntry = "";
 
 void init_ble() {
-  blePeripheral.setLocalName("BowWatch");
-  blePeripheral.setAdvertisingInterval(500); // in ms
-  blePeripheral.setDeviceName("BowWatchV1");
-  blePeripheral.setAdvertisedServiceUuid(main_service.uuid());
-  // main_service is what things connect to
-  blePeripheral.addAttribute(main_service);
-  // TXchar is a notification. It should tell the remote device when it is updated
-  blePeripheral.addAttribute(TXchar);
-  // RXchar is a "WriteWithoutResponse"
-  blePeripheral.addAttribute(RXchar);
-  MyTest.setValue("Initial");
-  blePeripheral.addAttribute(MyTest);
-  // handle events
-  // when RXchar receives something
-  RXchar.setEventHandler(BLEWritten, ble_written);
-  // when someone connects to the watch
-  blePeripheral.setEventHandler(BLEConnected, ble_ConnectHandler);
-  // when someone disconnects from the watch
-  blePeripheral.setEventHandler(BLEDisconnected, ble_DisconnectHandler);
-  blePeripheral.begin();
-  ble_feed();
+   blePeripheral.setLocalName("BowWatch");
+   blePeripheral.setAdvertisingInterval(500); // in ms
+   blePeripheral.setDeviceName("BowWatchV1");
+   blePeripheral.setAdvertisedServiceUuid(main_service.uuid());
+   // when someone connects to the watch
+   blePeripheral.setEventHandler(BLEConnected, ble_ConnectHandler);
+   // when someone disconnects from the watch
+   blePeripheral.setEventHandler(BLEDisconnected, ble_DisconnectHandler);
+   // main_service is what things connect to
+   blePeripheral.addAttribute(main_service);
+   // TXchar is a notification. It should tell the remote device when it is updated
+   blePeripheral.addAttribute(TXchar);
+   // RXchar is a "WriteWithoutResponse"
+   blePeripheral.addAttribute(RXchar);
+   // when RXchar receives something
+   RXchar.setEventHandler(BLEWritten, ble_written);
+
+   // Depth Subscribe / unsubscribe
+   char val[1] = {0};
+   DepthSubscribe.setValue(val);
+   blePeripheral.addAttribute(DepthSubscribe);
+
+   // Depth
+   char depthVal[8] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+   Depth.setValue( depthVal );
+   Depth.setEventHandler(BLEWritten, DepthWritten);
+   blePeripheral.addAttribute(Depth);
+
+   // Date/Time
+   DateTime.setValue("");
+   DateTime.setEventHandler(BLEWritten, DateTimeWritten);
+   blePeripheral.addAttribute(DateTime);
+
+   blePeripheral.begin();
+   ble_feed();
 }
 
 void ble_feed() {
   blePeripheral.poll();
+}
+
+void ble_set_event_handler(BleEventHandler* in)
+{
+   handler = in;
+   char val[1] = {0};
+   if (in != nullptr)
+      val[0] = 1;
+   DepthSubscribe.setValue(val);
 }
 
 /***
@@ -80,32 +106,58 @@ boolean syn;
  * @param central where it came from
  * @param characteristic the incoming data
  */
-void ble_written(BLECentral& central, BLECharacteristic& characteristic) {
-   String uuid = characteristic.uuid();
-   if (uuid == "3842fdbd-8feb-4e8e-b90d-8d8770bdee00")
-   {
-      // do something special
-   }
-   else
-   {
-      char remoteCharArray[22];
-      tempLen1 = characteristic.valueLength();
-      tempLen = tempLen + tempLen1;
-      memset(remoteCharArray, 0, sizeof(remoteCharArray));
-      memcpy(remoteCharArray, characteristic.value(), tempLen1);
-      tempCmd = tempCmd + remoteCharArray;
-      if (tempCmd[tempLen - 2] == '\r' && tempCmd[tempLen - 1] == '\n') {
-         answer = tempCmd.substring(0, tempLen - 2);
-         tempCmd = "";
-         tempLen = 0;
-         filterCmd(answer);
-      }
+void ble_written(BLECentral& central, BLECharacteristic& characteristic) 
+{
+   char remoteCharArray[22];
+   tempLen1 = characteristic.valueLength();
+   tempLen = tempLen + tempLen1;
+   memset(remoteCharArray, 0, sizeof(remoteCharArray));
+   memcpy(remoteCharArray, characteristic.value(), tempLen1);
+   tempCmd = tempCmd + remoteCharArray;
+   if (tempCmd[tempLen - 2] == '\r' && tempCmd[tempLen - 1] == '\n') {
+      answer = tempCmd.substring(0, tempLen - 2);
+      tempCmd = "";
+      tempLen = 0;
+      filterCmd(answer);
    }
 }
 
-BLECharacteristic& get_ble_value()
+void DepthWritten(BLECentral& central, BLECharacteristic& characteristic)
 {
-   return MyTest;
+   if (handler != nullptr)
+   {
+      unsigned const char* value = characteristic.value();
+      // unpack the 8 byte long into a 4 byte long
+      unsigned long l = value[7] | (value[6] << 8) | (value[5] << 16) | (value[4] << 24);
+      handler->onDepth(l);
+      lastLogEntry = "ReceivedDepth";
+   } else {
+      lastLogEntry = "NoHandlerDepth";
+   }
+
+}
+
+void DateTimeWritten(BLECentral& central, BLECharacteristic& characteristic)
+{
+   if (characteristic.valueLength() == 14)
+   {
+      char latestValue[15];
+      memset(latestValue, 0, 15);
+      memcpy(latestValue, characteristic.value(), 15);
+      String tempString = latestValue;
+      SetDateTimeString(tempString);
+   }
+   else
+   {
+      lastLogEntry = "InvalidDateTime";
+   }
+   if (handler != nullptr)
+      handler->onDateTime(lastLogEntry);
+}
+
+String get_last_message()
+{
+   return lastLogEntry;
 }
 
 /*****

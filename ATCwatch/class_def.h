@@ -29,8 +29,12 @@ public:
    {
    }
 
+   /***
+    * On app unselected
+    */
    virtual void post()
    {
+      running = false;
    }
 
    /***
@@ -114,4 +118,6 @@ public:
    {
       lv_obj_clean(lv_scr_act());
    }    
+protected:
+   bool running = false;
 };
